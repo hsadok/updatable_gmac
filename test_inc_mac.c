@@ -67,11 +67,25 @@ int test_first_mac()
     return compare_tags(tag, expected_tag);
 }
 
+int compare_ghash_register(uint8_t* result, uint8_t* h_table_entry)
+{
+    int ret = strncmp((char*) result, (char*) h_table_entry, GHASH_LEN);
+    if (ret) {
+        printf("GHASH verification failed\n");
+        printf("result: ");
+        print_hex_vector(result, GHASH_LEN);
+
+        printf("h_table_entry: ");
+        print_hex_vector(h_table_entry, GHASH_LEN);
+    }
+    return ret;
+}
+
 int test_ghash_register()
 {
     inc_mac_state_s inc_mac_state;
-    uint8_t test1[16] = {0};
-    // uint8_t test2[16] = {0};
+    int ret;
+    uint8_t test[GHASH_LEN] = {0};
 
     if (init_inc_mac(&inc_mac_state, key)) {
         fprintf(stderr, "Error initializing.");
@@ -79,24 +93,27 @@ int test_ghash_register()
     }
     uint8_t *hkeys_b = inc_mac_state.aead_state->ek + (uint32_t)176U;
 
-    ghash_register(test1, hkeys_b, hkeys_b);
-
-    int ret = strncmp((char*) test1, (char*) (hkeys_b + 16), 16);
+    ghash_register(test, hkeys_b, hkeys_b);
+    ret = compare_ghash_register(test, hkeys_b + GHASH_LEN);
     if (ret) {
-        printf("GHASH verification failed\n");
-        printf("test1: ");
-        print_hex_vector(test1, 16);
-
-        printf("hkeys_b: ");
-        print_hex_vector(hkeys_b, 16);
-
-        printf("hkeys_b + 16: ");
-        print_hex_vector(hkeys_b + 16, 16);
-    } else {
-        printf("ghash_register works\n");
+        printf("h_table[0]\n");
+        free_inc_mac(&inc_mac_state);
+        return ret;
     }
-    return ret;
-    // ghash_register(test2, hkeys_b + 16, hkeys_b);
+
+    memset(test, 0, GHASH_LEN);
+    ghash_register(test, hkeys_b + GHASH_LEN, hkeys_b);
+    ret = compare_ghash_register(test, hkeys_b + GHASH_LEN * 3);
+    if (ret) {
+        printf("h_table[1]\n");
+        free_inc_mac(&inc_mac_state);
+        return ret;
+    }
+
+    printf("ghash_register works\n");
+    
+    free_inc_mac(&inc_mac_state);
+    return 0;
 }
 
 // int test_inc_mac()

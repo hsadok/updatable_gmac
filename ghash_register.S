@@ -5,14 +5,14 @@ ghash_register:
   movdqu (%rdx), %xmm5  # Load h^1 
 
   # Put a bit reversal pattern into xmm9
-  mov $579005069656919567, %r8
-  pinsrq $0, %r8, %xmm9
-  mov $283686952306183, %r8
-  pinsrq $1, %r8, %xmm9
+  # mov $579005069656919567, %r8
+  # pinsrq $0, %r8, %xmm9
+  # mov $283686952306183, %r8
+  # pinsrq $1, %r8, %xmm9
 
   # Bit-reverse a and b
-  pshufb %xmm9, %xmm0
-  pshufb %xmm9, %xmm8
+  # pshufb %xmm9, %xmm0
+  # pshufb %xmm9, %xmm8
 
   # Compute Ghash_register
   vpxor %xmm0, %xmm8, %xmm0
@@ -38,5 +38,5 @@ ghash_register:
   vpxor %xmm7, %xmm8, %xmm8
   vpxor %xmm4, %xmm8, %xmm8
 
-  pshufb %xmm9, %xmm8   # Bit-reverse the result
+  # pshufb %xmm9, %xmm8   # Bit-reverse the result
   movdqu %xmm8, (%rdi)  # Store the result in a
