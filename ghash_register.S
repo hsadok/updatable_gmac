@@ -40,3 +40,4 @@ ghash_register:
 
   # pshufb %xmm9, %xmm8   # Bit-reverse the result
   movdqu %xmm8, (%rdi)  # Store the result in a
+  ret
