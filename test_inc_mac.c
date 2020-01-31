@@ -234,7 +234,7 @@ int test_ghash_register(bool verbose)
     return 0;
 }
 
-int test_xor_ghash(uint32_t change_byte, bool verbose)
+int test_xor_ghash(int32_t change_byte, bool verbose)
 {
     uint8_t tag[TAG_LEN];
     uint8_t tag_org[TAG_LEN];
@@ -243,7 +243,6 @@ int test_xor_ghash(uint32_t change_byte, bool verbose)
     uint8_t ghash_org[GHASH_LEN];
     uint8_t ghash_mod[GHASH_LEN];
     uint8_t ghash_xor[GHASH_LEN];
-    uint8_t manual_ghash_xor[GHASH_LEN];
     uint8_t aes_org[TAG_LEN];
     uint8_t aes_mod[TAG_LEN];
     uint8_t aes_xor[TAG_LEN];
@@ -261,7 +260,9 @@ int test_xor_ghash(uint32_t change_byte, bool verbose)
 
     memcpy(mod_message, message, MESSAGE_LEN);
 
-    // mod_message[change_byte] = 0xfa ^ message[change_byte];
+    if (change_byte >= 0) {
+        mod_message[change_byte] = message[change_byte]+1;
+    }
 
     for (uint16_t i = 0; i < MESSAGE_LEN; ++i) {
         xor_message[i] = message[i] ^ mod_message[i];
@@ -333,49 +334,27 @@ int test_xor_ghash(uint32_t change_byte, bool verbose)
         print_hex_vector(scratch, GHASH_LEN);
     }
 
-    tmp = load128_le(ghash_xor) ^ load128_le(tag_mod);
+    *(((uint64_t*) length) + 1) = MESSAGE_LEN * 8;
+
+    memset(scratch, 0, GHASH_LEN);
+    ghash_register(scratch, length, inc_mac_state->h_table);
+    if (verbose) {
+        printf("\nscratch: ");
+        print_hex_vector(scratch, GHASH_LEN);
+    }
+    tmp = load128_be(scratch) // the result must be converted to big endian
+          ^ load128_le(ghash_xor) ^ load128_le(ghash_mod);
+    store128_le(scratch, tmp);
+
+    if (verbose) {
+        printf("ghash_org?: ");
+        print_hex_vector(scratch, TAG_LEN);
+    }
+
+    tmp = load128_le(scratch) ^ load128_le(aes_mod);
     store128_le(tag, tmp);
 
-    if (verbose) {
-        printf("\nghash_xor ^ tag_mod: ");
-        print_hex_vector(tag, TAG_LEN);
-    }
-
-    int ret = compare_tags(tag, expected_tag, false);
-
-    tmp = load128_le(ghash_mod) ^ load128_le(tag_xor);
-    store128_le(tag, tmp);
-
-    if (verbose) {
-        printf("ghash_mod ^ tag_xor: ");
-        print_hex_vector(tag, TAG_LEN);
-        printf("\n");
-    }
-
-    ret = compare_tags(tag, expected_tag, false);
-
-    if (verbose) {
-        printf("ghash_org ^ ghash_mod: ");
-        tmp = load128_le(ghash_org) ^ load128_le(ghash_mod);
-        store128_le(manual_ghash_xor, tmp);
-        print_hex_vector(manual_ghash_xor, GHASH_LEN);
-
-        printf("( /\\    ^ length) * H: ");
-        uint128_t message_len = MESSAGE_LEN;
-        // message_len <<= 8;
-        store128_le(length, message_len);
-        ghash_register(manual_ghash_xor, length, inc_mac_state->h_table);
-        print_hex_vector(manual_ghash_xor, GHASH_LEN);
-
-        printf("            ghash_xor: ");
-        print_hex_vector(ghash_xor, GHASH_LEN);
-        printf("\n");
-
-        printf("ghash_xor tag: ");
-        tmp = load128_le(ghash_xor) ^ load128_le(ghash_mod) ^ load128_le(aes_mod);
-        store128_le(tag, tmp);
-        print_hex_vector(tag, TAG_LEN);
-    }
+    int ret = compare_tags(tag, expected_tag, verbose);
 
     free_inc_mac(inc_mac_state);
     
@@ -403,9 +382,19 @@ int test_inc_mac(uint32_t change_byte, bool verbose)
     ++(message[change_byte]);
 
     compute_first_mac(inc_mac_state, iv, message, MESSAGE_LEN, tag);
-    
-    printf("change_block_idx: %u\n", change_block_idx);
+
+    if (verbose) {
+        printf("first tag: ");
+        print_hex_vector(tag, TAG_LEN);
+        printf("change_block_idx: %u\n", change_block_idx);    
+    }
+
     memcpy(prev_block, message + change_block_idx * BLOCK_LEN, BLOCK_LEN);
+
+    if (verbose) {
+        printf("prev block: ");
+        print_hex_vector(prev_block, BLOCK_LEN);
+    }
 
     --(iv[IV_LEN - 1]);
     --(message[change_byte]);
@@ -436,11 +425,15 @@ int main()
     assert(test_first_mac(false) == 0);
     assert(test_gctr128(false) == 0);
     assert(test_ghash_register(false) == 0);
-    assert(test_xor_ghash(10, true) == 0);
-    assert(test_inc_mac(0, true) == 0);
-    assert(test_inc_mac(15, true) == 0);
-    assert(test_inc_mac(16, true) == 0);
-    assert(test_inc_mac(17, true) == 0);
+    assert(test_xor_ghash(-1, false) == 0);
+    assert(test_xor_ghash(0, false) == 0);
+    assert(test_xor_ghash(15, false) == 0);
+    assert(test_xor_ghash(16, false) == 0);
+    assert(test_xor_ghash(17, false) == 0);
+    assert(test_inc_mac(0, false) == 0);
+    assert(test_inc_mac(15, false) == 0);
+    assert(test_inc_mac(16, false) == 0);
+    assert(test_inc_mac(17, false) == 0);
     
     return 0;
 }
