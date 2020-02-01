@@ -4,61 +4,19 @@
 #include <stdlib.h>
 
 #include "inc_mac.h"
-
-#define MESSAGE_LEN 20
-#define HTABLE_SIZE 100
-
-static uint8_t key[KEY_LEN] = {
-    0x2f, 0xb4, 0x5e, 0x5b, 0x8f, 0x99, 0x3a, 0x2b,
-    0xfe, 0xbc, 0x4b, 0x15, 0xb5, 0x33, 0xe0, 0xb4
-};
-static uint8_t iv[IV_LEN] = {
-    0x5b, 0x05, 0x75, 0x5f, 0x98, 0x4d, 0x2b, 0x90,
-    0xf9, 0x4b, 0x80, 0x27
-};
-static uint8_t message[MESSAGE_LEN] = {
-    0xe8, 0x54, 0x91, 0xb2, 0x20, 0x2c, 0xaf, 0x1d,
-    0x7d, 0xce, 0x03, 0xb9, 0x7e, 0x09, 0x33, 0x1c,
-    0x32, 0x47, 0x39, 0x41
-};
-static const uint8_t expected_tag[TAG_LEN] = {
-    0xc7, 0x5b, 0x78, 0x32, 0xb2, 0xa2, 0xd9, 0xbd,
-    0x82, 0x74, 0x12, 0xb6, 0xef, 0x57, 0x69, 0xdb
-};
-
-static void print_hex_vector(const uint8_t* vector, size_t size)
-{
-    for (size_t i = 0; i < size; ++i) {
-        printf("%02hhx ", vector[i]);
-    }
-    printf("\n");
-}
-
-int compare_tags(const uint8_t tag1[TAG_LEN], const uint8_t tag2[TAG_LEN],
-                 bool verbose) {
-    int ret = memcmp((char*) tag1, (char*) tag2, TAG_LEN);
-    if (verbose) {
-        printf("tag 1: ");
-        print_hex_vector(tag1, TAG_LEN);
-
-        printf("tag 2: ");
-        print_hex_vector(tag2, TAG_LEN);
-        if (ret) {
-            printf("Tags differ\n");
-        } else {
-            printf("Tags match\n");
-        }
-    }
-    
-    return ret;
-}
+#include "helpers.h"
 
 int test_first_mac(bool verbose)
 {
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t message[MESSAGE_LEN];
     uint8_t tag[TAG_LEN];
     inc_mac_state_s* inc_mac_state;
 
-    if (init_inc_mac(&inc_mac_state, key, HTABLE_SIZE)) {
+    get_ref_values(key, iv, message);
+
+    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
@@ -77,6 +35,9 @@ int test_first_mac(bool verbose)
 
 int test_gctr128(bool verbose)
 {
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t message[MESSAGE_LEN];
     uint8_t tag[TAG_LEN];
     uint8_t my_expected_tag[TAG_LEN];
     inc_mac_state_s* inc_mac_state;
@@ -84,7 +45,9 @@ int test_gctr128(bool verbose)
     uint8_t inout_b[16U] = { 0U };
     uint128_t tmp;
 
-    if (init_inc_mac(&inc_mac_state, key, HTABLE_SIZE)) {
+    get_ref_values(key, iv, message);
+
+    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
@@ -156,11 +119,16 @@ void print_htable(uint8_t* h_table) {
 
 int test_ghash_register(bool verbose)
 {
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t message[MESSAGE_LEN];
     inc_mac_state_s* inc_mac_state;
     int ret;
     uint8_t test[GHASH_LEN] = {0};
 
-    if (init_inc_mac(&inc_mac_state, key, HTABLE_SIZE)) {
+    get_ref_values(key, iv, message);
+
+    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
@@ -236,6 +204,9 @@ int test_ghash_register(bool verbose)
 
 int test_xor_ghash(int32_t change_byte, bool verbose)
 {
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t message[MESSAGE_LEN];
     uint8_t tag[TAG_LEN];
     uint8_t tag_org[TAG_LEN];
     uint8_t tag_mod[TAG_LEN];
@@ -253,7 +224,9 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
     inc_mac_state_s* inc_mac_state;
     uint128_t tmp;
 
-    if (init_inc_mac(&inc_mac_state, key, HTABLE_SIZE)) {
+    get_ref_values(key, iv, message);
+
+    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
@@ -368,12 +341,17 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
 
 int test_inc_mac(uint32_t change_byte, bool verbose)
 {
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t message[MESSAGE_LEN];
     uint8_t tag[TAG_LEN];
     uint8_t prev_block[BLOCK_LEN];
     inc_mac_state_s* inc_mac_state;
     int32_t change_block_idx = change_byte >> 4; // 128-bit blocks
 
-    if (init_inc_mac(&inc_mac_state, key, HTABLE_SIZE)) {
+    get_ref_values(key, iv, message);
+
+    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
@@ -420,6 +398,77 @@ int test_inc_mac(uint32_t change_byte, bool verbose)
     return ret;
 }
 
+int test_large_inc_mac(uint32_t change_byte, uint16_t message_len, bool verbose)
+{
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t tag[TAG_LEN];
+    uint8_t my_expected_tag[TAG_LEN];
+    uint8_t prev_block[BLOCK_LEN];
+    inc_mac_state_s* inc_mac_state;
+    int32_t change_block_idx = change_byte >> 4; // 128-bit blocks
+    uint8_t* extended_message;
+
+    get_ref_values(key, iv, NULL);
+
+    extended_message = get_extended_message(message_len);
+
+    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+        fprintf(stderr, "Error initializing.");
+        exit(1);
+    }
+
+    ++(iv[IV_LEN - 1]);
+    ++(extended_message[change_byte]);
+
+    compute_first_mac(inc_mac_state, iv, extended_message, message_len, tag);
+
+    if (verbose) {
+        printf("first tag: ");
+        print_hex_vector(tag, TAG_LEN);
+        printf("change_block_idx: %u\n", change_block_idx);    
+    }
+
+    memcpy(prev_block, extended_message + change_block_idx * BLOCK_LEN, BLOCK_LEN);
+
+    if (verbose) {
+        printf("prev block: ");
+        print_hex_vector(prev_block, BLOCK_LEN);
+    }
+
+    --(iv[IV_LEN - 1]);
+    --(extended_message[change_byte]);
+    
+    compute_inc_mac(
+        inc_mac_state,
+        iv,
+        extended_message,
+        message_len,
+        prev_block,
+        change_block_idx,
+        tag
+    );
+
+    compute_first_mac(
+        inc_mac_state,
+        iv,
+        extended_message,
+        message_len,
+        my_expected_tag
+    );
+
+    free_inc_mac(inc_mac_state);
+    free(extended_message);
+    
+    int ret = compare_tags(tag, my_expected_tag, verbose);
+    if (ret) {
+        printf("large inc mac failed\n");
+    } else {
+        printf("large inc mac works\n");
+    }
+    return ret;
+}
+
 int main()
 {
     assert(test_first_mac(false) == 0);
@@ -434,6 +483,7 @@ int main()
     assert(test_inc_mac(15, false) == 0);
     assert(test_inc_mac(16, false) == 0);
     assert(test_inc_mac(17, false) == 0);
+    assert(test_large_inc_mac(17, 1500, false) == 0);
     
     return 0;
 }

@@ -13,9 +13,9 @@
 typedef struct inc_mac_state_s_s
 {
   EverCrypt_AEAD_state_s* aead_state;
-  uint32_t htable_size;
   uint8_t prev_ghash[GHASH_LEN];
-  uint8_t h_table[];
+  uint8_t* h_table;
+  uint8_t* length_table;
 }
 inc_mac_state_s;
 
@@ -23,7 +23,8 @@ EverCrypt_Error_error_code
 init_inc_mac(
   inc_mac_state_s** inc_mac_state,
   uint8_t* key,
-  uint32_t htable_size
+  uint32_t h_table_size,
+  uint32_t length_table_size
 );
 
 void free_inc_mac(inc_mac_state_s* inc_mac_state);
@@ -51,6 +52,17 @@ compute_inc_mac(
 // a and b are 128-bit values
 // h_table is initalized during create_in and lives inside EverCrypt_AEAD_state_s
 // computes: a <- (a xor b) * h
-extern void ghash_register(uint8_t* a, uint8_t* b, uint8_t* h_table);
+extern void ghash_register(
+  uint8_t* a,
+  const uint8_t* b,
+  const uint8_t* h_table
+);
+
+// same as above but changes endianess of inputs
+extern void ghash_register_reverse_input(
+  uint8_t* a,
+  const uint8_t* b,
+  const uint8_t* h_table
+);
 
 #endif // _INC_MAC_H
