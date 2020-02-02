@@ -102,7 +102,7 @@ compute_inc_mac(
   inc_mac_state_s* inc_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint32_t content_len,
+  uint64_t content_len,
   uint8_t* prev_block, // will be overwritten with the ghash
   uint32_t change_block_idx,
   uint8_t* tag
@@ -112,7 +112,7 @@ compute_inc_mac(
   EverCrypt_AEAD_state_s* aead_state = inc_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };
   uint8_t scratch[BLOCK_LEN] = { 0U };
-  uint8_t *length, *ghash, *h, *prev_ghash;
+  uint8_t *length, *ghash, *prev_ghash;
   uint128_t tmp;
 
   prev_ghash = inc_mac_state->prev_ghash;
@@ -123,19 +123,18 @@ compute_inc_mac(
 
   uint32_t htable_idx = nb_blocks - change_block_idx - 1;
 
-  h = inc_mac_state->h_table + BLOCK_LEN * htable_idx;
-
-  ghash_register_reverse_input(prev_block, content + change_block_idx * BLOCK_LEN, h);
-
-  store128_le(scratch, (uint128_t) 0);
-  *(((uint64_t*) scratch) + 1) = content_len * 8; // length 
-  h = inc_mac_state->h_table;
-  ghash_register(prev_block, scratch, h);
+  double_ghash_register(
+    prev_block,
+    content + change_block_idx * BLOCK_LEN,
+    inc_mac_state->h_table + BLOCK_LEN * htable_idx,
+    inc_mac_state->h_table,
+    content_len
+  );
 
   length = inc_mac_state->length_table + BLOCK_LEN * content_len;
 
   ghash = prev_block;
-  tmp = load128_be(prev_block) ^ load128_le(length) ^ load128_le(prev_ghash);
+  tmp = load128_le(prev_block) ^ load128_le(length) ^ load128_le(prev_ghash);
   store128_le(ghash, tmp);
   
   // compute AES(IV') ^ ghash

@@ -43,7 +43,7 @@ compute_inc_mac(
   inc_mac_state_s* inc_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint32_t content_len,
+  uint64_t content_len,
   uint8_t* prev_block,
   uint32_t change_block_idx,
   uint8_t* tag
@@ -63,6 +63,14 @@ extern void ghash_register_reverse_input(
   uint8_t* a,
   const uint8_t* b,
   const uint8_t* h_table
+);
+
+extern void double_ghash_register(
+  uint8_t* a,
+  const uint8_t* b,
+  const uint8_t* h_k,
+  const uint8_t* h_1,
+  uint64_t content_len
 );
 
 #endif // _INC_MAC_H
