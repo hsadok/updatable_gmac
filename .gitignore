@@ -1,4 +1,4 @@
-test_inc_mac
+test_upd_mac
 *.o
 .depend
 profile

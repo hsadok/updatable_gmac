@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "inc_mac.h"
+#include "upd_mac.h"
 #include "helpers.h"
 #include "nss.h"
 
@@ -13,17 +13,17 @@ int test_first_mac(bool verbose)
     uint8_t iv[IV_LEN];
     uint8_t message[MESSAGE_LEN];
     uint8_t tag[TAG_LEN];
-    inc_mac_state_s* inc_mac_state;
+    upd_mac_state_s* upd_mac_state;
 
     get_ref_values(key, iv, message);
 
-    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+    if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
-    compute_first_mac(inc_mac_state, iv, message, MESSAGE_LEN, tag);
+    compute_first_mac(upd_mac_state, iv, message, MESSAGE_LEN, tag);
     
-    free_inc_mac(inc_mac_state);
+    free_upd_mac(upd_mac_state);
     
     int ret = compare_tags(tag, expected_tag, verbose);
     if (ret) {
@@ -69,19 +69,19 @@ int test_gctr128(bool verbose)
     uint8_t message[MESSAGE_LEN];
     uint8_t tag[TAG_LEN];
     uint8_t my_expected_tag[TAG_LEN];
-    inc_mac_state_s* inc_mac_state;
+    upd_mac_state_s* upd_mac_state;
     uint8_t ctr_block[16U] = { 0U };
     uint8_t inout_b[16U] = { 0U };
     uint128_t tmp;
 
     get_ref_values(key, iv, message);
 
-    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+    if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
 
-    compute_first_mac(inc_mac_state, iv, message, MESSAGE_LEN, my_expected_tag);
+    compute_first_mac(upd_mac_state, iv, message, MESSAGE_LEN, my_expected_tag);
 
     memcpy(ctr_block, iv, IV_LEN);
     tmp = load128_be(ctr_block) + 1;
@@ -89,18 +89,18 @@ int test_gctr128(bool verbose)
 
     if (verbose) {
         printf("previous ghash: ");
-        print_hex_vector(inc_mac_state->prev_ghash, sizeof inc_mac_state->prev_ghash);
+        print_hex_vector(upd_mac_state->prev_ghash, sizeof upd_mac_state->prev_ghash);
 
         printf("  expected_tag: ");
         print_hex_vector(expected_tag, sizeof expected_tag);
     }
 
     gctr128_bytes(
-        inc_mac_state->prev_ghash,
+        upd_mac_state->prev_ghash,
         (uint64_t)16U,
         tag,
         inout_b,
-        inc_mac_state->aead_state->ek,
+        upd_mac_state->aead_state->ek,
         ctr_block,
         1U
     );
@@ -151,17 +151,17 @@ int test_ghash_register(bool verbose)
     uint8_t key[KEY_LEN];
     uint8_t iv[IV_LEN];
     uint8_t message[MESSAGE_LEN];
-    inc_mac_state_s* inc_mac_state;
+    upd_mac_state_s* upd_mac_state;
     int ret;
     uint8_t test[GHASH_LEN] = {0};
 
     get_ref_values(key, iv, message);
 
-    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+    if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
-    uint8_t *hkeys_b = inc_mac_state->aead_state->ek + (uint32_t)176U;
+    uint8_t *hkeys_b = upd_mac_state->aead_state->ek + (uint32_t)176U;
 
     if (verbose) {
         print_htable(hkeys_b);
@@ -173,7 +173,7 @@ int test_ghash_register(bool verbose)
     }
     ret = compare_ghash_register(test, hkeys_b + GHASH_LEN, verbose);
     if (ret) {
-        free_inc_mac(inc_mac_state);
+        free_upd_mac(upd_mac_state);
         return ret;
     }
 
@@ -185,7 +185,7 @@ int test_ghash_register(bool verbose)
     }
     ret = compare_ghash_register(test, hkeys_b + GHASH_LEN * 3, verbose);
     if (ret) {
-        free_inc_mac(inc_mac_state);
+        free_upd_mac(upd_mac_state);
         return ret;
     }
 
@@ -197,7 +197,7 @@ int test_ghash_register(bool verbose)
     }
     ret = compare_ghash_register(test, hkeys_b + GHASH_LEN * 4, verbose);
     if (ret) {
-        free_inc_mac(inc_mac_state);
+        free_upd_mac(upd_mac_state);
         return ret;
     }
 
@@ -209,7 +209,7 @@ int test_ghash_register(bool verbose)
     }
     ret = compare_ghash_register(test, hkeys_b + GHASH_LEN * 6, verbose);
     if (ret) {
-        free_inc_mac(inc_mac_state);
+        free_upd_mac(upd_mac_state);
         return ret;
     }
 
@@ -221,13 +221,13 @@ int test_ghash_register(bool verbose)
     }
     ret = compare_ghash_register(test, hkeys_b + GHASH_LEN * 7, verbose);
     if (ret) {
-        free_inc_mac(inc_mac_state);
+        free_upd_mac(upd_mac_state);
         return ret;
     }
 
     printf("ghash_register works\n");
     
-    free_inc_mac(inc_mac_state);
+    free_upd_mac(upd_mac_state);
     return 0;
 }
 
@@ -250,12 +250,12 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
     uint8_t mod_message[MESSAGE_LEN] = { 0U };
     uint8_t xor_message[MESSAGE_LEN] = { 0U };
     uint8_t scratch[MESSAGE_LEN] = { 0U };
-    inc_mac_state_s* inc_mac_state;
+    upd_mac_state_s* upd_mac_state;
     uint128_t tmp;
 
     get_ref_values(key, iv, message);
 
-    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+    if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
@@ -270,8 +270,8 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
         xor_message[i] = message[i] ^ mod_message[i];
     }
 
-    compute_first_mac(inc_mac_state, iv, message, MESSAGE_LEN, tag_org);
-    memcpy(ghash_org, inc_mac_state->prev_ghash, GHASH_LEN);
+    compute_first_mac(upd_mac_state, iv, message, MESSAGE_LEN, tag_org);
+    memcpy(ghash_org, upd_mac_state->prev_ghash, GHASH_LEN);
     tmp = load128_le(tag_org) ^ load128_le(ghash_org);
     store128_le(aes_org, tmp);
 
@@ -287,8 +287,8 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
         print_hex_vector(aes_org, GHASH_LEN);
     }
 
-    compute_first_mac(inc_mac_state, iv, mod_message, MESSAGE_LEN, tag_mod);
-    memcpy(ghash_mod, inc_mac_state->prev_ghash, GHASH_LEN);
+    compute_first_mac(upd_mac_state, iv, mod_message, MESSAGE_LEN, tag_mod);
+    memcpy(ghash_mod, upd_mac_state->prev_ghash, GHASH_LEN);
     tmp = load128_le(tag_mod) ^ load128_le(ghash_mod);
     store128_le(aes_mod, tmp);
 
@@ -309,8 +309,8 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
         print_hex_vector(scratch, GHASH_LEN);
     }
 
-    compute_first_mac(inc_mac_state, iv, xor_message, MESSAGE_LEN, tag_xor);
-    memcpy(ghash_xor, inc_mac_state->prev_ghash, GHASH_LEN);
+    compute_first_mac(upd_mac_state, iv, xor_message, MESSAGE_LEN, tag_xor);
+    memcpy(ghash_xor, upd_mac_state->prev_ghash, GHASH_LEN);
     tmp = load128_le(tag_xor) ^ load128_le(ghash_xor);
     store128_le(aes_xor, tmp);
 
@@ -339,7 +339,7 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
     *(((uint64_t*) length) + 1) = MESSAGE_LEN * 8;
 
     memset(scratch, 0, GHASH_LEN);
-    ghash_register(scratch, length, inc_mac_state->h_table);
+    ghash_register(scratch, length, upd_mac_state->h_table);
     if (verbose) {
         printf("\nscratch: ");
         print_hex_vector(scratch, GHASH_LEN);
@@ -358,7 +358,7 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
 
     int ret = compare_tags(tag, expected_tag, verbose);
 
-    free_inc_mac(inc_mac_state);
+    free_upd_mac(upd_mac_state);
     
     if (ret) {
         printf("test_xor_ghash failed\n");
@@ -368,19 +368,19 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
     return ret;
 }
 
-int test_inc_mac(uint32_t change_byte, bool verbose)
+int test_upd_mac(uint32_t change_byte, bool verbose)
 {
     uint8_t key[KEY_LEN];
     uint8_t iv[IV_LEN];
     uint8_t message[MESSAGE_LEN];
     uint8_t tag[TAG_LEN];
     uint8_t prev_block[BLOCK_LEN];
-    inc_mac_state_s* inc_mac_state;
+    upd_mac_state_s* upd_mac_state;
     int32_t change_block_idx = change_byte >> 4; // 128-bit blocks
 
     get_ref_values(key, iv, message);
 
-    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+    if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
@@ -388,7 +388,7 @@ int test_inc_mac(uint32_t change_byte, bool verbose)
     ++(iv[IV_LEN - 1]);
     ++(message[change_byte]);
 
-    compute_first_mac(inc_mac_state, iv, message, MESSAGE_LEN, tag);
+    compute_first_mac(upd_mac_state, iv, message, MESSAGE_LEN, tag);
 
     if (verbose) {
         printf("first tag: ");
@@ -406,8 +406,8 @@ int test_inc_mac(uint32_t change_byte, bool verbose)
     --(iv[IV_LEN - 1]);
     --(message[change_byte]);
     
-    compute_inc_mac(
-        inc_mac_state,
+    compute_upd_mac(
+        upd_mac_state,
         iv,
         message,
         MESSAGE_LEN,
@@ -416,25 +416,25 @@ int test_inc_mac(uint32_t change_byte, bool verbose)
         tag
     );
 
-    free_inc_mac(inc_mac_state);
+    free_upd_mac(upd_mac_state);
     
     int ret = compare_tags(tag, expected_tag, verbose);
     if (ret) {
-        printf("inc mac failed\n");
+        printf("upd mac failed\n");
     } else {
-        printf("inc mac works\n");
+        printf("upd mac works\n");
     }
     return ret;
 }
 
-int test_large_inc_mac(uint32_t change_byte, uint16_t message_len, bool verbose)
+int test_large_upd_mac(uint32_t change_byte, uint16_t message_len, bool verbose)
 {
     uint8_t key[KEY_LEN];
     uint8_t iv[IV_LEN];
     uint8_t tag[TAG_LEN];
     uint8_t my_expected_tag[TAG_LEN];
     uint8_t prev_block[BLOCK_LEN];
-    inc_mac_state_s* inc_mac_state;
+    upd_mac_state_s* upd_mac_state;
     int32_t change_block_idx = change_byte >> 4; // 128-bit blocks
     uint8_t* extended_message;
 
@@ -442,7 +442,7 @@ int test_large_inc_mac(uint32_t change_byte, uint16_t message_len, bool verbose)
 
     extended_message = get_extended_message(message_len);
 
-    if (init_inc_mac(&inc_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+    if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
         fprintf(stderr, "Error initializing.");
         exit(1);
     }
@@ -450,7 +450,7 @@ int test_large_inc_mac(uint32_t change_byte, uint16_t message_len, bool verbose)
     ++(iv[IV_LEN - 1]);
     ++(extended_message[change_byte]);
 
-    compute_first_mac(inc_mac_state, iv, extended_message, message_len, tag);
+    compute_first_mac(upd_mac_state, iv, extended_message, message_len, tag);
 
     if (verbose) {
         printf("first tag: ");
@@ -468,8 +468,8 @@ int test_large_inc_mac(uint32_t change_byte, uint16_t message_len, bool verbose)
     --(iv[IV_LEN - 1]);
     --(extended_message[change_byte]);
     
-    compute_inc_mac(
-        inc_mac_state,
+    compute_upd_mac(
+        upd_mac_state,
         iv,
         extended_message,
         message_len,
@@ -479,21 +479,21 @@ int test_large_inc_mac(uint32_t change_byte, uint16_t message_len, bool verbose)
     );
 
     compute_first_mac(
-        inc_mac_state,
+        upd_mac_state,
         iv,
         extended_message,
         message_len,
         my_expected_tag
     );
 
-    free_inc_mac(inc_mac_state);
+    free_upd_mac(upd_mac_state);
     free(extended_message);
     
     int ret = compare_tags(tag, my_expected_tag, verbose);
     if (ret) {
-        printf("large inc mac failed\n");
+        printf("large upd mac failed\n");
     } else {
-        printf("large inc mac works\n");
+        printf("large upd mac works\n");
     }
     return ret;
 }
@@ -508,11 +508,11 @@ int main()
     assert(test_xor_ghash(15, false) == 0);
     assert(test_xor_ghash(16, false) == 0);
     assert(test_xor_ghash(17, false) == 0);
-    assert(test_inc_mac(0, false) == 0);
-    assert(test_inc_mac(15, false) == 0);
-    assert(test_inc_mac(16, false) == 0);
-    assert(test_inc_mac(17, false) == 0);
-    assert(test_large_inc_mac(17, 1500, false) == 0);
+    assert(test_upd_mac(0, false) == 0);
+    assert(test_upd_mac(15, false) == 0);
+    assert(test_upd_mac(16, false) == 0);
+    assert(test_upd_mac(17, false) == 0);
+    assert(test_large_upd_mac(17, 1500, false) == 0);
     assert(test_nss_mac(false) == 0);
     
     return 0;

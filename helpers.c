@@ -3,7 +3,7 @@
 
 #include <EverCrypt_AEAD.h>
 
-#include "inc_mac.h"
+#include "upd_mac.h"
 #include "helpers.h"
 
 void print_hex_vector(const uint8_t* vector, size_t size)

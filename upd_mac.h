@@ -1,6 +1,6 @@
 
-#ifndef _INC_MAC_H
-#define _INC_MAC_H
+#ifndef _UPD_MAC_H
+#define _UPD_MAC_H
 
 #include <EverCrypt_AEAD.h>
 
@@ -10,28 +10,28 @@
 #define BLOCK_LEN 16 // 128 bits
 #define GHASH_LEN 16 // 128 bits
 
-typedef struct inc_mac_state_s_s
+typedef struct upd_mac_state_s_s
 {
   EverCrypt_AEAD_state_s* aead_state;
   uint8_t prev_ghash[GHASH_LEN];
   uint8_t* h_table;
   uint8_t* length_table;
 }
-inc_mac_state_s;
+upd_mac_state_s;
 
 EverCrypt_Error_error_code
-init_inc_mac(
-  inc_mac_state_s** inc_mac_state,
+init_upd_mac(
+  upd_mac_state_s** upd_mac_state,
   uint8_t* key,
   uint32_t h_table_size,
   uint32_t length_table_size
 );
 
-void free_inc_mac(inc_mac_state_s* inc_mac_state);
+void free_upd_mac(upd_mac_state_s* upd_mac_state);
 
 void
 compute_first_mac(
-  inc_mac_state_s* inc_mac_state,
+  upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
   uint32_t content_len,
@@ -39,8 +39,8 @@ compute_first_mac(
 );
 
 void
-compute_inc_mac(
-  inc_mac_state_s* inc_mac_state,
+compute_upd_mac(
+  upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
   uint64_t content_len,
@@ -66,4 +66,4 @@ extern void double_ghash_register(
   uint64_t content_len
 );
 
-#endif // _INC_MAC_H
+#endif // _UPD_MAC_H

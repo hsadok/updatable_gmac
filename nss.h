@@ -2,7 +2,7 @@
 #ifndef _NSS_H
 #define _NSS_H
 
-#include "inc_mac.h"
+#include "upd_mac.h"
 
 #define AES_MAX_EXP_KEY_SIZE 8*15
 
