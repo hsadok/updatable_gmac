@@ -58,13 +58,6 @@ extern void ghash_register(
   const uint8_t* h_table
 );
 
-// same as above but changes endianess of inputs
-extern void ghash_register_reverse_input(
-  uint8_t* a,
-  const uint8_t* b,
-  const uint8_t* h_table
-);
-
 extern void double_ghash_register(
   uint8_t* a,
   const uint8_t* b,

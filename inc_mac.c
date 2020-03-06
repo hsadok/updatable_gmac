@@ -108,6 +108,7 @@ compute_inc_mac(
   uint8_t* tag
 )
 {
+  // TODO(sadok) handle non-aligned messages
   uint32_t nb_blocks = (content_len >> 4) + 1;
   EverCrypt_AEAD_state_s* aead_state = inc_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };

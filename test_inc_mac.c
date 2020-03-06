@@ -5,6 +5,7 @@
 
 #include "inc_mac.h"
 #include "helpers.h"
+#include "nss.h"
 
 int test_first_mac(bool verbose)
 {
@@ -29,6 +30,34 @@ int test_first_mac(bool verbose)
         printf("compute_first_mac failed\n");
     } else {
         printf("compute_first_mac works\n");
+    }
+    return ret;
+}
+
+int test_nss_mac(bool verbose)
+{
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t message[MESSAGE_LEN];
+    uint8_t tag[TAG_LEN];
+    gcm_context_s* gctx;
+
+    get_ref_values(key, iv, message);
+
+    if (init_nss(&gctx, key, iv)) {
+        fprintf(stderr, "Error initializing.");
+        exit(1);
+    }
+
+    mac_nss(gctx, message, MESSAGE_LEN, tag, iv);
+
+    free_nss(gctx);
+
+    int ret = compare_tags(tag, expected_tag, verbose);
+    if (ret) {
+        printf("test_nss_mac failed\n");
+    } else {
+        printf("test_nss_mac works\n");
     }
     return ret;
 }
@@ -484,6 +513,7 @@ int main()
     assert(test_inc_mac(16, false) == 0);
     assert(test_inc_mac(17, false) == 0);
     assert(test_large_inc_mac(17, 1500, false) == 0);
+    assert(test_nss_mac(false) == 0);
     
     return 0;
 }
