@@ -2,3 +2,4 @@ test_upd_mac
 *.o
 .depend
 profile
+*.a
