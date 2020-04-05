@@ -36,7 +36,7 @@ all: $(TEST_EXEC) $(PROF_EXEC) $(RESULT_LIB) .depend
 
 -include .depend
 
-$(RESULT_LIB): $(LIB_OBJS)
+$(RESULT_LIB): $(LIB_OBJS) $(STATIC_LIBS)
 	$(AR) rcs $(RESULT_LIB) $(LIB_OBJS)
 
 $(TEST_EXEC): $(TEST_OBJS) $(RESULT_LIB)

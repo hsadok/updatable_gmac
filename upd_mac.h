@@ -33,7 +33,7 @@ void
 compute_first_mac(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
-  uint8_t *content,
+  uint8_t* content,
   uint32_t content_len,
   uint8_t* tag
 );
@@ -42,7 +42,7 @@ void
 compute_upd_mac(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
-  uint8_t *content,
+  uint8_t* content,
   uint64_t content_len,
   uint8_t* prev_block,
   uint32_t change_block_idx,
