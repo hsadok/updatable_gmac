@@ -3,44 +3,183 @@
 
 #include "upd_mac.h"
 
+/* The following macros and function were adapted from linux-sgx
+ * (https://github.com/intel/linux-sgx)
+ */
+void
+__attribute__((noreturn))
+__stack_chk_fail(void)
+{
+    __builtin_trap();
+}
+
+void
+__attribute__((noreturn))
+__attribute__((visibility ("hidden")))
+__stack_chk_fail_local (void)
+{
+    __stack_chk_fail ();
+}
+
+/*
+ * sizeof(word) MUST BE A POWER OF TWO
+ * SO THAT wmask BELOW IS ALL ONES
+ */
+typedef	long word;		/* "word" used for optimal copy speed */
+
+#define	wsize	sizeof(word)
+#define	wmask	(wsize - 1)
+
+#ifdef _TLIBC_USE_INTEL_FAST_STRING_
+extern void *_intel_fast_memcpy(void *, void *, size_t);
+#endif
+
+/*
+ * Copy a block of memory, not handling overlap.
+ */
+void *
+__memcpy(void *dst0, const void *src0, size_t length)
+{
+	char *dst = (char *)dst0;
+	const char *src = (const char *)src0;
+	size_t t;
+
+	if (length == 0 || dst == src)		/* nothing to do */
+		goto done;
+
+	if ((dst < src && dst + length > src) ||
+	    (src < dst && src + length > dst)) {
+        /* backwards memcpy */
+		__builtin_trap();
+	}
+
+	/*
+	 * Macros: loop-t-times; and loop-t-times, t>0
+	 */
+#define	TLOOP(s) if (t) TLOOP1(s)
+#define	TLOOP1(s) do { s; } while (--t)
+
+	/*
+	 * Copy forward.
+	 */
+	t = (long)src;	/* only need low bits */
+	if ((t | (long)dst) & wmask) {
+		/*
+		 * Try to align operands.  This cannot be done
+		 * unless the low bits match.
+		 */
+		if ((t ^ (long)dst) & wmask || length < wsize)
+			t = length;
+		else
+			t = wsize - (t & wmask);
+		length -= t;
+		TLOOP1(*dst++ = *src++);
+	}
+	/*
+	 * Copy whole words, then mop up any trailing bytes.
+	 */
+	t = length / wsize;
+	TLOOP(*(word *)dst = *(word *)src; src += wsize; dst += wsize);
+	t = length & wmask;
+	TLOOP(*dst++ = *src++);
+done:
+	return (dst0);
+}
+
+
+void *
+my_memcpy(void *dst0, const void *src0, size_t length)
+{
+#ifdef _TLIBC_USE_INTEL_FAST_STRING_
+ 	return _intel_fast_memcpy(dst0, (void*)src0, length);
+#else
+	return __memcpy(dst0, src0, length);
+#endif
+}
+
+#if defined __GNUC__ && defined __GNUC_MINOR_
+# define __GNUC_PREREQ__(ma, mi) \
+    ((__GNUC__ > (ma)) || (__GNUC__ == (ma) && __GNUC_MINOR__ >= (mi)))
+#else
+# define __GNUC_PREREQ__(ma, mi) 0
+#endif
+#if defined(__GNUC__) && __GNUC_PREREQ__(2, 96)
+#define __predict_true(exp)	__builtin_expect(((exp) != 0), 1)
+#define __predict_false(exp)	__builtin_expect(((exp) != 0), 0)
+#else
+#define __predict_true(exp)	((exp) != 0)
+#define __predict_false(exp)	((exp) != 0)
+#endif
+
+void *__memcpy_chk(void *dest, const void *src,
+              size_t copy_amount, size_t dest_len)
+{
+    if (__predict_false(copy_amount > dest_len)) {
+        /* TODO: add runtime error massage */
+        __builtin_trap();
+    }
+
+    return my_memcpy(dest, src, copy_amount);
+}
+/* end of excerpt adapted from linux-sgx */
+
+
+void* (*my_malloc)(size_t);
+void (*my_free)(void*);
+
+inline void* my_calloc(size_t nmemb, size_t size)
+{
+  size_t buffer_sz = nmemb * size;
+  uint8_t* ptr = my_malloc(buffer_sz);
+  for (size_t i = 0; i < buffer_sz; ++i) {
+    ptr[i] = (uint8_t) 0;
+  }
+  return (void*) ptr;
+}
+
 EverCrypt_Error_error_code
-init_upd_mac(
+init_upd_mac_with_callbacks(
   upd_mac_state_s** upd_mac_state,
   uint8_t* key,
   uint32_t h_table_size,
-  uint32_t length_table_size
+  uint32_t length_table_size,
+  void* (*malloc_ptr)(size_t),
+  void (*free_ptr)(void*)
 )
 {
   uint8_t scratch[BLOCK_LEN] = { 0U };
   EverCrypt_Error_error_code ret;
 
-  EverCrypt_AutoConfig2_init();
+  my_malloc = malloc_ptr;
+  my_free = free_ptr;
+
+  EverCrypt_AutoConfig2_init(malloc_ptr, free_ptr);
 
   Spec_Agile_AEAD_alg alg = Spec_Agile_AEAD_AES128_GCM;
 
-  *upd_mac_state = calloc(1, sizeof(upd_mac_state_s));
+  *upd_mac_state = my_calloc(1, sizeof(upd_mac_state_s));
   if (*upd_mac_state == NULL) {
     return 1;
   }
-  (*upd_mac_state)->h_table = calloc(h_table_size, BLOCK_LEN);
+  (*upd_mac_state)->h_table = my_calloc(h_table_size, BLOCK_LEN);
   if ((*upd_mac_state)->h_table == NULL) {
     return 2;
   }
-  (*upd_mac_state)->length_table = calloc(length_table_size, BLOCK_LEN);
+  (*upd_mac_state)->length_table = my_calloc(length_table_size, BLOCK_LEN);
   if ((*upd_mac_state)->length_table == NULL) {
     return 3;
   }
 
   ret = EverCrypt_AEAD_create_in(alg, &((*upd_mac_state)->aead_state), key);
   if (ret) {
-    free(upd_mac_state);
+    my_free(upd_mac_state);
     return ret;
   }
 
   uint8_t *hkeys_b = (*upd_mac_state)->aead_state->ek + (uint32_t)176U;
 
   // copy h to h_table[0]
-  memcpy((*upd_mac_state)->h_table, hkeys_b, GHASH_LEN);
+  my_memcpy((*upd_mac_state)->h_table, hkeys_b, GHASH_LEN);
 
   // fill remaining h_table entries
   for (uint32_t i = 1; i < h_table_size; ++i) {
@@ -70,8 +209,8 @@ free_upd_mac(
 )
 {
   EverCrypt_AEAD_free(upd_mac_state->aead_state);
-  free(upd_mac_state->h_table);
-  free(upd_mac_state);
+  my_free(upd_mac_state->h_table);
+  my_free(upd_mac_state);
 }
 
 void
@@ -118,7 +257,7 @@ compute_upd_mac(
 
   prev_ghash = upd_mac_state->prev_ghash;
 
-  memcpy(ctr_block, iv, IV_LEN);
+  my_memcpy(ctr_block, iv, IV_LEN);
   tmp = load128_be(ctr_block) + 1;
   store128_le(ctr_block, tmp);
 

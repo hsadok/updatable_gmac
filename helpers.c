@@ -64,3 +64,15 @@ void get_ref_values(uint8_t* key, uint8_t* iv, uint8_t* message)
         memcpy(message, ref_message, sizeof ref_message);
     }
 }
+
+EverCrypt_Error_error_code
+init_upd_mac(
+  upd_mac_state_s** upd_mac_state,
+  uint8_t* key,
+  uint32_t h_table_size,
+  uint32_t length_table_size
+)
+{
+    return init_upd_mac_with_callbacks(upd_mac_state, key, h_table_size,
+        length_table_size, malloc, free);
+}

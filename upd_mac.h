@@ -20,11 +20,13 @@ typedef struct upd_mac_state_s_s
 upd_mac_state_s;
 
 EverCrypt_Error_error_code
-init_upd_mac(
+init_upd_mac_with_callbacks(
   upd_mac_state_s** upd_mac_state,
   uint8_t* key,
   uint32_t h_table_size,
-  uint32_t length_table_size
+  uint32_t length_table_size,
+  void* (*malloc_ptr)(size_t),
+  void (*free_ptr)(void*)
 );
 
 void free_upd_mac(upd_mac_state_s* upd_mac_state);

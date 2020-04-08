@@ -41,4 +41,12 @@ uint8_t* get_extended_message(uint16_t extended_message_len);
 
 void get_ref_values(uint8_t* key, uint8_t* iv, uint8_t* message);
 
+EverCrypt_Error_error_code
+init_upd_mac(
+  upd_mac_state_s** upd_mac_state,
+  uint8_t* key,
+  uint32_t h_table_size,
+  uint32_t length_table_size
+);
+
 #endif // _HELPERS_H
