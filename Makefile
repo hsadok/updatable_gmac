@@ -1,7 +1,7 @@
 
 CC = gcc
 LD = gcc
-CFLAGS = -Wall -ansi -Wextra -std=gnu11 -O2 \
+CFLAGS = -Wall -ansi -Wextra -fno-stack-protector -std=gnu11 -O2 \
 	-I hacl-star/dist/gcc64-only \
 	-I hacl-star/dist/kremlin/include/ \
 	-I hacl-star/dist/kremlin/kremlib/dist/minimal
