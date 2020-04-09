@@ -153,7 +153,7 @@ init_upd_mac_with_callbacks(
   my_malloc = malloc_ptr;
   my_free = free_ptr;
 
-  EverCrypt_AutoConfig2_init(malloc_ptr, free_ptr);
+  EverCrypt_AutoConfig2_init(malloc_ptr, free_ptr, true);
 
   Spec_Agile_AEAD_alg alg = Spec_Agile_AEAD_AES128_GCM;
 
