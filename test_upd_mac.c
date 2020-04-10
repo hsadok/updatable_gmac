@@ -502,12 +502,181 @@ int test_large_upd_mac(uint32_t change_byte, uint16_t message_len, bool verbose)
     return ret;
 }
 
+int test_large_upd_mac_mult_contig_blocks(uint32_t change_byte1, uint16_t message_len, bool verbose)
+{
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t ghash[GHASH_LEN];
+    uint8_t tag[TAG_LEN];
+    uint8_t my_expected_tag[TAG_LEN];
+    uint8_t prev_block[2*BLOCK_LEN];
+    upd_mac_state_s* upd_mac_state;
+    uint32_t change_byte2 = change_byte1 + BLOCK_LEN;
+    int32_t change_block_idx1 = change_byte1 >> 4; // 128-bit blocks
+    int32_t change_block_idx2 = change_byte2 >> 4; // 128-bit blocks
+    uint8_t* extended_message;
+
+    get_ref_values(key, iv, NULL);
+
+    extended_message = get_extended_message(message_len);
+
+    if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+        fprintf(stderr, "Error initializing.");
+        exit(1);
+    }
+
+    ++(iv[IV_LEN - 1]);
+    ++(extended_message[change_byte1]);
+    ++(extended_message[change_byte2]);
+
+    compute_first_mac(upd_mac_state, iv, extended_message, message_len, ghash, tag);
+
+    if (verbose) {
+        printf("first tag: ");
+        print_hex_vector(tag, TAG_LEN);
+        printf("change_block_idx1: %u\n", change_block_idx1);
+        printf("change_block_idx2: %u\n", change_block_idx2);
+    }
+
+    memcpy(prev_block, extended_message + change_block_idx1 * BLOCK_LEN, BLOCK_LEN);
+    memcpy(prev_block+BLOCK_LEN, extended_message + change_block_idx2 * BLOCK_LEN, BLOCK_LEN);
+
+    if (verbose) {
+        printf("prev block1: ");
+        print_hex_vector(prev_block, BLOCK_LEN);
+        printf("prev block2: ");
+        print_hex_vector(prev_block+BLOCK_LEN, BLOCK_LEN);
+    }
+
+    --(iv[IV_LEN - 1]);
+    --(extended_message[change_byte1]);
+    --(extended_message[change_byte2]);
+    
+    compute_upd_mac_mult_contig_blks(
+        upd_mac_state,
+        iv,
+        extended_message,
+        message_len,
+        prev_block,
+        change_block_idx1,
+        2,
+        ghash,
+        tag
+    );
+
+    compute_first_mac(
+        upd_mac_state,
+        iv,
+        extended_message,
+        message_len,
+        ghash,
+        my_expected_tag
+    );
+
+    free_upd_mac(upd_mac_state);
+    free(extended_message);
+    
+    int ret = compare_tags(tag, my_expected_tag, verbose);
+    if (ret) {
+        printf("large upd mac mult contig blocks failed\n");
+    } else {
+        printf("large upd mac mult contig blocks works\n");
+    }
+    return ret;
+}
+
+int test_large_upd_mac_mult_sparse_blocks(uint32_t change_byte1, uint16_t message_len, bool verbose)
+{
+    uint8_t key[KEY_LEN];
+    uint8_t iv[IV_LEN];
+    uint8_t ghash[GHASH_LEN];
+    uint8_t tag[TAG_LEN];
+    uint8_t my_expected_tag[TAG_LEN];
+    uint8_t prev_blocks[2*BLOCK_LEN];
+    upd_mac_state_s* upd_mac_state;
+    uint32_t change_byte2 = change_byte1 + 2*BLOCK_LEN; // blocks are not contiguous
+    uint32_t change_block_idxes[2];
+    uint8_t* extended_message;
+
+
+    change_block_idxes[0] = change_byte1 >> 4; // 128-bit blocks
+    change_block_idxes[1] = change_byte2 >> 4; // 128-bit blocks
+
+    get_ref_values(key, iv, NULL);
+
+    extended_message = get_extended_message(message_len);
+
+    if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
+        fprintf(stderr, "Error initializing.");
+        exit(1);
+    }
+
+    ++(iv[IV_LEN - 1]);
+    ++(extended_message[change_byte1]);
+    ++(extended_message[change_byte2]);
+
+    compute_first_mac(upd_mac_state, iv, extended_message, message_len, ghash, tag);
+
+    if (verbose) {
+        printf("first tag: ");
+        print_hex_vector(tag, TAG_LEN);
+        printf("change_block_idx1: %u\n", change_block_idxes[0]);
+        printf("change_block_idx2: %u\n", change_block_idxes[1]);
+    }
+
+    memcpy(prev_blocks, extended_message + change_block_idxes[0] * BLOCK_LEN, BLOCK_LEN);
+    memcpy(prev_blocks+BLOCK_LEN, extended_message + change_block_idxes[1] * BLOCK_LEN, BLOCK_LEN);
+
+    if (verbose) {
+        printf("prev block1: ");
+        print_hex_vector(prev_blocks, BLOCK_LEN);
+        printf("prev block2: ");
+        print_hex_vector(prev_blocks+BLOCK_LEN, BLOCK_LEN);
+    }
+
+    --(iv[IV_LEN - 1]);
+    --(extended_message[change_byte1]);
+    --(extended_message[change_byte2]);
+    
+    compute_upd_mac_mult_blks(
+        upd_mac_state,
+        iv,
+        extended_message,
+        message_len,
+        prev_blocks,
+        change_block_idxes,
+        2,
+        ghash,
+        tag
+    );
+
+    compute_first_mac(
+        upd_mac_state,
+        iv,
+        extended_message,
+        message_len,
+        ghash,
+        my_expected_tag
+    );
+
+    free_upd_mac(upd_mac_state);
+    free(extended_message);
+    
+    int ret = compare_tags(tag, my_expected_tag, verbose);
+    if (ret) {
+        printf("large upd mac mult sparse blocks failed\n");
+    } else {
+        printf("large upd mac mult sparse blocks works\n");
+    }
+    return ret;
+}
+
 int main()
 {
     assert(test_first_mac(false) == 0);
     assert(test_gctr128(false) == 0);
     assert(test_ghash_register(false) == 0);
-    assert(test_xor_ghash(-1, false) == 0);
+    assert(test_xor_ghash(-1, false) == 0); // no change
     assert(test_xor_ghash(0, false) == 0);
     assert(test_xor_ghash(15, false) == 0);
     assert(test_xor_ghash(16, false) == 0);
@@ -517,6 +686,8 @@ int main()
     assert(test_upd_mac(16, false) == 0);
     assert(test_upd_mac(17, false) == 0);
     assert(test_large_upd_mac(17, 1500, false) == 0);
+    assert(test_large_upd_mac_mult_contig_blocks(17, 1500, false) == 0);
+    assert(test_large_upd_mac_mult_sparse_blocks(17, 1500, false) == 0);
     assert(test_nss_mac(false) == 0);
     
     return 0;

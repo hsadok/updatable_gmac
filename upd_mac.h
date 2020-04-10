@@ -52,6 +52,83 @@ compute_upd_mac(
   uint8_t* tag
 );
 
+void
+compute_upd_mac_mult_contig_blks(
+  upd_mac_state_s* upd_mac_state,
+  uint8_t* iv,
+  uint8_t *content,
+  uint64_t content_len,
+  uint8_t* prev_blocks, // point to the beginning of the first block
+  uint32_t first_change_block_idx,
+  uint32_t nb_changed_blocks,
+  uint8_t* prev_ghash,
+  uint8_t* tag
+);
+
+void
+compute_upd_mac_2_contig_blks(
+  upd_mac_state_s* upd_mac_state,
+  uint8_t* iv,
+  uint8_t *content,
+  uint64_t content_len,
+  uint8_t* prev_blocks, // point to the beginning of the first block
+  uint32_t first_change_block_idx,
+  uint8_t* prev_ghash,
+  uint8_t* tag
+);
+
+void
+compute_upd_mac_3_contig_blks(
+  upd_mac_state_s* upd_mac_state,
+  uint8_t* iv,
+  uint8_t *content,
+  uint64_t content_len,
+  uint8_t* prev_blocks, // point to the beginning of the first block
+  uint32_t first_change_block_idx,
+  uint8_t* prev_ghash,
+  uint8_t* tag
+);
+
+void
+compute_upd_mac_mult_blks(
+  upd_mac_state_s* upd_mac_state,
+  uint8_t* iv,
+  uint8_t *content,
+  uint64_t content_len,
+  uint8_t* prev_blocks, // array of all previous blocks (the array is
+                        // contiguous, even though the blocks may not be)
+  uint32_t* change_block_idxes,
+  uint32_t nb_changed_blocks,
+  uint8_t* prev_ghash,
+  uint8_t* tag
+);
+
+void
+compute_upd_mac_2_blks(
+  upd_mac_state_s* upd_mac_state,
+  uint8_t* iv,
+  uint8_t *content,
+  uint64_t content_len,
+  uint8_t* prev_blocks, // array of all previous blocks (the array is
+                        // contiguous, even though the blocks may not be)
+  uint32_t* change_block_idxes,
+  uint8_t* prev_ghash,
+  uint8_t* tag
+);
+
+void
+compute_upd_mac_3_blks(
+  upd_mac_state_s* upd_mac_state,
+  uint8_t* iv,
+  uint8_t *content,
+  uint64_t content_len,
+  uint8_t* prev_blocks, // array of all previous blocks (the array is
+                        // contiguous, even though the blocks may not be)
+  uint32_t* change_block_idxes,
+  uint8_t* prev_ghash,
+  uint8_t* tag
+);
+
 // a and b are 128-bit values
 // h_table is initalized during create_in and lives inside EverCrypt_AEAD_state_s
 // computes: a <- (a xor b) * h
