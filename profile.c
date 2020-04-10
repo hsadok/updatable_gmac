@@ -17,6 +17,7 @@ double profile_mac(uint16_t extended_message_len)
     uint8_t key[KEY_LEN];
     uint8_t iv[IV_LEN];
     uint8_t message[MESSAGE_LEN];
+    uint8_t ghash[GHASH_LEN];
     uint8_t tag[TAG_LEN];
     upd_mac_state_s* upd_mac_state;
     clock_t t1, t2;
@@ -31,7 +32,7 @@ double profile_mac(uint16_t extended_message_len)
 
     extended_message = get_extended_message(extended_message_len);
 
-    compute_first_mac(upd_mac_state, iv, extended_message, MESSAGE_LEN, tag);
+    compute_first_mac(upd_mac_state, iv, extended_message, MESSAGE_LEN, ghash, tag);
     
     t1 = clock();
     for (uint64_t i = 0; i < NB_ITERS; ++i) {
@@ -95,6 +96,7 @@ double profile_upd_mac(uint32_t change_byte, uint16_t extended_message_len)
     uint8_t key[KEY_LEN];
     uint8_t iv[IV_LEN];
     uint8_t message[MESSAGE_LEN];
+    uint8_t ghash[GHASH_LEN];
     uint8_t tag[TAG_LEN];
     uint8_t prev_block[BLOCK_LEN];
     upd_mac_state_s* upd_mac_state;
@@ -111,7 +113,7 @@ double profile_upd_mac(uint32_t change_byte, uint16_t extended_message_len)
 
     extended_message = get_extended_message(extended_message_len);
 
-    compute_first_mac(upd_mac_state, iv, extended_message, MESSAGE_LEN, tag);
+    compute_first_mac(upd_mac_state, iv, extended_message, MESSAGE_LEN, ghash, tag);
     
     t1 = clock();
     for (uint64_t i = 0; i < NB_ITERS; ++i) {
@@ -123,6 +125,7 @@ double profile_upd_mac(uint32_t change_byte, uint16_t extended_message_len)
             MESSAGE_LEN,
             prev_block,
             change_block_idx,
+            ghash,
             tag
         );
     }

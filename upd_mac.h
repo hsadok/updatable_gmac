@@ -13,7 +13,6 @@
 typedef struct upd_mac_state_s_s
 {
   EverCrypt_AEAD_state_s* aead_state;
-  uint8_t prev_ghash[GHASH_LEN];
   uint8_t* h_table;
   uint8_t* length_table;
 }
@@ -37,6 +36,7 @@ compute_first_mac(
   uint8_t* iv,
   uint8_t* content,
   uint32_t content_len,
+  uint8_t* ghash,
   uint8_t* tag
 );
 
@@ -48,6 +48,7 @@ compute_upd_mac(
   uint64_t content_len,
   uint8_t* prev_block,
   uint32_t change_block_idx,
+  uint8_t* prev_ghash,
   uint8_t* tag
 );
 

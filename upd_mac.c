@@ -219,6 +219,7 @@ compute_first_mac(
   uint8_t* iv,
   uint8_t *content,
   uint32_t content_len,
+  uint8_t* ghash,
   uint8_t* tag
 )
 {
@@ -232,7 +233,7 @@ compute_first_mac(
     0,    // no plain data
     NULL, // we don't care about the encrypted output
     tag,
-    upd_mac_state->prev_ghash
+    ghash
   );
 }
 
@@ -244,6 +245,7 @@ compute_upd_mac(
   uint64_t content_len,
   uint8_t* prev_block, // will be overwritten with the ghash
   uint32_t change_block_idx,
+  uint8_t* prev_ghash,
   uint8_t* tag
 )
 {
@@ -252,10 +254,10 @@ compute_upd_mac(
   EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };
   uint8_t scratch[BLOCK_LEN] = { 0U };
-  uint8_t *length, *ghash, *prev_ghash;
+  uint8_t *length, *ghash;
   uint128_t tmp;
 
-  prev_ghash = upd_mac_state->prev_ghash;
+  // prev_ghash = upd_mac_state->prev_ghash;
 
   my_memcpy(ctr_block, iv, IV_LEN);
   tmp = load128_be(ctr_block) + 1;
@@ -288,3 +290,57 @@ compute_upd_mac(
     1U
   );
 }
+
+// void
+// compute_upd_mac_mult_blks(
+//   upd_mac_state_s* upd_mac_state,
+//   uint8_t* iv,
+//   uint8_t *content,
+//   uint64_t content_len,
+//   uint8_t* prev_blocks[], // will be overwritten with the ghash
+//   uint32_t* change_block_idxes,
+//   uint32_t nb_changed_blocks,
+//   uint8_t* tag
+// )
+// {
+//   // TODO(sadok) handle non-aligned messages
+//   uint32_t nb_blocks = (content_len >> 4) + 1;
+//   EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
+//   uint8_t ctr_block[BLOCK_LEN] = { 0U };
+//   uint8_t scratch[BLOCK_LEN] = { 0U };
+//   uint8_t *length, *ghash, *prev_ghash;
+//   uint128_t tmp;
+
+//   prev_ghash = upd_mac_state->prev_ghash;
+
+//   my_memcpy(ctr_block, iv, IV_LEN);
+//   tmp = load128_be(ctr_block) + 1;
+//   store128_le(ctr_block, tmp);
+
+//   uint32_t htable_idx = nb_blocks - change_block_idx - 1;
+
+//   double_ghash_register(
+//     prev_block,
+//     content + change_block_idx * BLOCK_LEN,
+//     upd_mac_state->h_table + BLOCK_LEN * htable_idx,
+//     upd_mac_state->h_table,
+//     content_len
+//   );
+
+//   length = upd_mac_state->length_table + BLOCK_LEN * content_len;
+
+//   ghash = prev_block;
+//   tmp = load128_le(prev_block) ^ load128_le(length) ^ load128_le(prev_ghash);
+//   store128_le(ghash, tmp);
+  
+//   // compute AES(IV') ^ ghash
+//   gctr128_bytes(
+//     ghash,
+//     (uint64_t)16U,
+//     tag,
+//     scratch,
+//     aead_state->ek,
+//     ctr_block,
+//     1U
+//   );
+// }
