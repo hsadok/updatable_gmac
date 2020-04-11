@@ -45,7 +45,7 @@ compute_upd_mac(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t* content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_block,
   uint32_t change_block_idx,
   uint8_t* prev_ghash,
@@ -57,7 +57,7 @@ compute_upd_mac_mult_contig_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // point to the beginning of the first block
   uint32_t first_change_block_idx,
   uint32_t nb_changed_blocks,
@@ -70,7 +70,7 @@ compute_upd_mac_2_contig_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // point to the beginning of the first block
   uint32_t first_change_block_idx,
   uint8_t* prev_ghash,
@@ -82,7 +82,7 @@ compute_upd_mac_3_contig_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // point to the beginning of the first block
   uint32_t first_change_block_idx,
   uint8_t* prev_ghash,
@@ -94,7 +94,7 @@ compute_upd_mac_mult_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // array of all previous blocks (the array is
                         // contiguous, even though the blocks may not be)
   uint32_t* change_block_idxes,
@@ -108,7 +108,7 @@ compute_upd_mac_2_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // array of all previous blocks (the array is
                         // contiguous, even though the blocks may not be)
   uint32_t* change_block_idxes,
@@ -121,7 +121,7 @@ compute_upd_mac_3_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // array of all previous blocks (the array is
                         // contiguous, even though the blocks may not be)
   uint32_t* change_block_idxes,

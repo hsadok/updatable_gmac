@@ -242,7 +242,7 @@ compute_upd_mac(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_block, // will be overwritten with the ghash
   uint32_t change_block_idx,
   uint8_t* prev_ghash,
@@ -278,7 +278,7 @@ compute_upd_mac(
   ghash = prev_block;
   tmp = load128_le(prev_block) ^ load128_le(length) ^ load128_le(prev_ghash);
   store128_le(ghash, tmp);
-  
+
   // compute AES(IV') ^ ghash
   gctr128_bytes(
     ghash,
@@ -297,7 +297,7 @@ __compute_upd_mac_mult_contig_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // point to the beginning of the first block
   uint32_t first_change_block_idx,
   uint32_t nb_changed_blocks,
@@ -355,7 +355,7 @@ compute_upd_mac_mult_contig_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // point to the beginning of the first block
   uint32_t first_change_block_idx,
   uint32_t nb_changed_blocks,
@@ -381,7 +381,7 @@ compute_upd_mac_2_contig_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // point to the beginning of the first block
   uint32_t first_change_block_idx,
   uint8_t* prev_ghash,
@@ -406,7 +406,7 @@ compute_upd_mac_3_contig_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks, // point to the beginning of the first block
   uint32_t first_change_block_idx,
   uint8_t* prev_ghash,
@@ -432,7 +432,7 @@ __compute_upd_mac_mult_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks,
   uint32_t* change_block_idxes,
   uint32_t nb_changed_blocks,
@@ -490,7 +490,7 @@ compute_upd_mac_mult_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks,
   uint32_t* change_block_idxes,
   uint32_t nb_changed_blocks,
@@ -516,7 +516,7 @@ compute_upd_mac_2_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks,
   uint32_t* change_block_idxes,
   uint8_t* prev_ghash,
@@ -541,7 +541,7 @@ compute_upd_mac_3_blks(
   upd_mac_state_s* upd_mac_state,
   uint8_t* iv,
   uint8_t *content,
-  uint64_t content_len,
+  uint32_t content_len,
   uint8_t* prev_blocks,
   uint32_t* change_block_idxes,
   uint8_t* prev_ghash,
