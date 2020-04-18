@@ -52,6 +52,13 @@ compute_upd_mac(
   uint8_t* tag
 );
 
+uint8_t
+get_log_bit(
+  upd_mac_state_s* upd_mac_state,
+  uint8_t* iv,
+  uint8_t log
+);
+
 void
 compute_upd_mac_mult_contig_blks(
   upd_mac_state_s* upd_mac_state,

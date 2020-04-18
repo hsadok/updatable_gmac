@@ -350,6 +350,35 @@ __compute_upd_mac_mult_contig_blks(
   );
 }
 
+// FIXME(sadok): the following function should not be in this library
+uint8_t
+get_log_bit(
+  upd_mac_state_s* upd_mac_state,
+  uint8_t* iv,
+  uint8_t log
+)
+{
+  uint8_t scratch[BLOCK_LEN] = { 0U };
+  uint8_t input[BLOCK_LEN] = { 0U };
+  uint8_t result[BLOCK_LEN] = { 0U };
+
+  input[0] = log & 0x1;
+
+  EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
+
+  gctr128_bytes(
+    input,
+    (uint64_t)16U,
+    result,
+    scratch,
+    aead_state->ek,
+    iv,
+    1U
+  );
+
+  return result[0] & 0x1;
+}
+
 void
 compute_upd_mac_mult_contig_blks(
   upd_mac_state_s* upd_mac_state,
