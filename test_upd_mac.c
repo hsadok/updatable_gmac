@@ -371,13 +371,14 @@ int test_upd_mac(uint32_t change_byte, bool verbose)
 {
     uint8_t key[KEY_LEN];
     uint8_t iv[IV_LEN];
-    uint8_t message[MESSAGE_LEN];
+    uint8_t message[MESSAGE_LEN + 16];
     uint8_t ghash[GHASH_LEN];
     uint8_t tag[TAG_LEN];
     uint8_t prev_block[BLOCK_LEN];
     upd_mac_state_s* upd_mac_state;
     int32_t change_block_idx = change_byte >> 4; // 128-bit blocks
 
+    memset(message, 0, MESSAGE_LEN + 16);
     get_ref_values(key, iv, message);
 
     if (init_upd_mac(&upd_mac_state, key, H_TABLE_SIZE, LENGTH_TABLE_SIZE)) {
@@ -406,6 +407,8 @@ int test_upd_mac(uint32_t change_byte, bool verbose)
     --(iv[IV_LEN - 1]);
     --(message[change_byte]);
     
+    message[MESSAGE_LEN] = 0xff;
+
     compute_upd_mac(
         upd_mac_state,
         iv,
@@ -681,7 +684,7 @@ int main()
     assert(test_xor_ghash(15, false) == 0);
     assert(test_xor_ghash(16, false) == 0);
     assert(test_xor_ghash(17, false) == 0);
-    assert(test_upd_mac(0, false) == 0);
+    assert(test_upd_mac(0, true) == 0);
     assert(test_upd_mac(15, false) == 0);
     assert(test_upd_mac(16, false) == 0);
     assert(test_upd_mac(17, false) == 0);

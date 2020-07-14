@@ -223,6 +223,8 @@ compute_first_mac(
   uint8_t* tag
 )
 {
+  uint32_t nb_blocks = (content_len >> 4) + 1;
+  memset(content + content_len, 0, nb_blocks * 16 - content_len);
   encrypt_aes128_gcm_save_ghash(
     upd_mac_state->aead_state,
     iv,
@@ -249,8 +251,8 @@ compute_upd_mac(
   uint8_t* tag
 )
 {
-  // TODO(sadok) handle non-aligned messages
   uint32_t nb_blocks = (content_len >> 4) + 1;
+  memset(content + content_len, 0, nb_blocks * 16 - content_len);
   EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };
   uint8_t scratch[BLOCK_LEN] = { 0U };
@@ -305,8 +307,8 @@ __compute_upd_mac_mult_contig_blks(
   uint8_t* tag
 )
 {
-  // TODO(sadok) handle non-aligned messages
   uint32_t nb_blocks = (content_len >> 4) + 1;
+  memset(content + content_len, 0, nb_blocks * 16 - content_len);
   EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };
   uint8_t scratch[BLOCK_LEN] = { 0U };
@@ -469,8 +471,8 @@ __compute_upd_mac_mult_blks(
   uint8_t* tag
 )
 {
-  // TODO(sadok) handle non-aligned messages
   uint32_t nb_blocks = (content_len >> 4) + 1;
+  memset(content + content_len, 0, nb_blocks * 16 - content_len);
   EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };
   uint8_t scratch[BLOCK_LEN] = { 0U };
