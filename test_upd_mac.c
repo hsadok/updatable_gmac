@@ -237,7 +237,7 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
 {
     uint8_t key[KEY_LEN];
     uint8_t iv[IV_LEN];
-    uint8_t message[MESSAGE_LEN];
+    uint8_t message[MESSAGE_LEN+16];
     uint8_t tag[TAG_LEN];
     uint8_t tag_org[TAG_LEN];
     uint8_t tag_mod[TAG_LEN];
@@ -249,9 +249,9 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
     uint8_t aes_mod[TAG_LEN];
     uint8_t aes_xor[TAG_LEN];
     uint8_t length[BLOCK_LEN] = { 0U };
-    uint8_t mod_message[MESSAGE_LEN] = { 0U };
-    uint8_t xor_message[MESSAGE_LEN] = { 0U };
-    uint8_t scratch[MESSAGE_LEN] = { 0U };
+    uint8_t mod_message[MESSAGE_LEN+16] = { 0U };
+    uint8_t xor_message[MESSAGE_LEN+16] = { 0U };
+    uint8_t scratch[MESSAGE_LEN+16] = { 0U };
     upd_mac_state_s* upd_mac_state;
     uint128_t tmp;
 
@@ -367,7 +367,7 @@ int test_xor_ghash(int32_t change_byte, bool verbose)
     return ret;
 }
 
-int test_upd_mac(uint32_t change_byte, bool verbose)
+int test_upd_mac(const int32_t change_byte, bool verbose)
 {
     uint8_t key[KEY_LEN];
     uint8_t iv[IV_LEN];
@@ -376,7 +376,13 @@ int test_upd_mac(uint32_t change_byte, bool verbose)
     uint8_t tag[TAG_LEN];
     uint8_t prev_block[BLOCK_LEN];
     upd_mac_state_s* upd_mac_state;
-    int32_t change_block_idx = change_byte >> 4; // 128-bit blocks
+    int32_t change_block_idx;
+    
+    if (change_byte >= 0) {
+        change_block_idx = change_byte >> 4; // 128-bit blocks
+    } else {
+        change_block_idx = 0;
+    }
 
     memset(message, 0, MESSAGE_LEN + 16);
     get_ref_values(key, iv, message);
@@ -386,28 +392,44 @@ int test_upd_mac(uint32_t change_byte, bool verbose)
         exit(1);
     }
 
-    ++(iv[IV_LEN - 1]);
-    ++(message[change_byte]);
+    if (change_byte >= 0) {
+        // ++(iv[IV_LEN - 1]);
+        ++(message[change_byte]);
+    }
+
+    if (verbose) {
+        printf("ORIGINAL\n");
+        printf("  message: ");
+        print_hex_vector(message, MESSAGE_LEN);
+    }
 
     compute_first_mac(upd_mac_state, iv, message, MESSAGE_LEN, ghash, tag);
 
     if (verbose) {
-        printf("first tag: ");
+        printf("  first tag: ");
         print_hex_vector(tag, TAG_LEN);
-        printf("change_block_idx: %u\n", change_block_idx);    
+        printf("  change_block_idx: %u\n", change_block_idx);    
     }
 
     memcpy(prev_block, message + change_block_idx * BLOCK_LEN, BLOCK_LEN);
 
+    if (change_byte >= 0) {
+        // --(iv[IV_LEN - 1]);
+        --(message[change_byte]);
+    }
+
+    message[MESSAGE_LEN] = 0xff;
+
     if (verbose) {
         printf("prev block: ");
         print_hex_vector(prev_block, BLOCK_LEN);
-    }
+        printf("this block: ");
+        print_hex_vector(message + change_block_idx * BLOCK_LEN, BLOCK_LEN);
 
-    --(iv[IV_LEN - 1]);
-    --(message[change_byte]);
-    
-    message[MESSAGE_LEN] = 0xff;
+        printf("MOD\n");
+        printf("  message: ");
+        print_hex_vector(message, MESSAGE_LEN);
+    }
 
     compute_upd_mac(
         upd_mac_state,
@@ -419,6 +441,12 @@ int test_upd_mac(uint32_t change_byte, bool verbose)
         ghash,
         tag
     );
+
+    if (verbose) {
+        printf("  second tag: ");
+        print_hex_vector(tag, TAG_LEN);
+        printf("  change_block_idx: %u\n", change_block_idx);    
+    }
 
     free_upd_mac(upd_mac_state);
     
@@ -680,11 +708,12 @@ int main()
     assert(test_gctr128(false) == 0);
     assert(test_ghash_register(false) == 0);
     assert(test_xor_ghash(-1, false) == 0); // no change
-    assert(test_xor_ghash(0, false) == 0);
+    assert(test_xor_ghash( 0, false) == 0);
     assert(test_xor_ghash(15, false) == 0);
     assert(test_xor_ghash(16, false) == 0);
     assert(test_xor_ghash(17, false) == 0);
-    assert(test_upd_mac(0, true) == 0);
+    assert(test_upd_mac(-1, false) == 0); // no change
+    assert(test_upd_mac( 0, false) == 0);
     assert(test_upd_mac(15, false) == 0);
     assert(test_upd_mac(16, false) == 0);
     assert(test_upd_mac(17, false) == 0);

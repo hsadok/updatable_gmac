@@ -223,7 +223,7 @@ compute_first_mac(
   uint8_t* tag
 )
 {
-  uint32_t nb_blocks = (content_len >> 4) + 1;
+  uint32_t nb_blocks = ((content_len-1) >> 4) + 1;
   memset(content + content_len, 0, nb_blocks * 16 - content_len);
   encrypt_aes128_gcm_save_ghash(
     upd_mac_state->aead_state,
@@ -245,21 +245,19 @@ compute_upd_mac(
   uint8_t* iv,
   uint8_t *content,
   uint32_t content_len,
-  uint8_t* prev_block, // will be overwritten with the ghash
+  uint8_t* prev_block,
   uint32_t change_block_idx,
-  uint8_t* prev_ghash,
+  uint8_t* ghash,
   uint8_t* tag
 )
 {
-  uint32_t nb_blocks = (content_len >> 4) + 1;
+  uint32_t nb_blocks = ((content_len-1) >> 4) + 1;
   memset(content + content_len, 0, nb_blocks * 16 - content_len);
   EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };
   uint8_t scratch[BLOCK_LEN] = { 0U };
-  uint8_t *length, *ghash;
+  uint8_t *length;
   uint128_t tmp;
-
-  // prev_ghash = upd_mac_state->prev_ghash;
 
   my_memcpy(ctr_block, iv, IV_LEN);
   tmp = load128_be(ctr_block) + 1;
@@ -277,8 +275,7 @@ compute_upd_mac(
 
   length = upd_mac_state->length_table + BLOCK_LEN * content_len;
 
-  ghash = prev_block;
-  tmp = load128_le(prev_block) ^ load128_le(length) ^ load128_le(prev_ghash);
+  tmp = load128_le(prev_block) ^ load128_le(length) ^ load128_le(ghash);
   store128_le(ghash, tmp);
 
   // compute AES(IV') ^ ghash
@@ -307,7 +304,7 @@ __compute_upd_mac_mult_contig_blks(
   uint8_t* tag
 )
 {
-  uint32_t nb_blocks = (content_len >> 4) + 1;
+  uint32_t nb_blocks = ((content_len-1) >> 4) + 1;
   memset(content + content_len, 0, nb_blocks * 16 - content_len);
   EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };
@@ -471,7 +468,7 @@ __compute_upd_mac_mult_blks(
   uint8_t* tag
 )
 {
-  uint32_t nb_blocks = (content_len >> 4) + 1;
+  uint32_t nb_blocks = ((content_len-1) >> 4) + 1;
   memset(content + content_len, 0, nb_blocks * 16 - content_len);
   EverCrypt_AEAD_state_s* aead_state = upd_mac_state->aead_state;
   uint8_t ctr_block[BLOCK_LEN] = { 0U };
